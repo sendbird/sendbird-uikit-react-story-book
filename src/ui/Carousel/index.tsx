@@ -43,6 +43,11 @@ interface CarouselProps {
   gap?: number;
 }
 
+interface StartPos {
+  x: number;
+  y: number;
+}
+
 export function Carousel({
   id,
   items,
@@ -66,6 +71,8 @@ export function Carousel({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dragging, setDragging] = useState<'vertical' | 'horizontal' | null>(null);
   const [startX, setStartX] = useState(0);
+  const [startPos, setStartPos] = useState<StartPos>();
+
   const [offset, setOffset] = useState(0);
   const [translateX, setTranslateX] = useState(0);
   const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -88,24 +95,53 @@ export function Carousel({
   };
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    setStartX(event.touches[0].clientX);
+    // setStartX(event.touches[0].clientX);
+    setStartPos({
+      x: event.touches[0].clientX,
+      y: event.touches[0].clientY,
+    });
   };
 
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (!startX) return;
+    if (!startPos) return;
     const touchMoveX = event.touches[0].clientX;
-    const deltaX = Math.abs(touchMoveX - startX);
-    const deltaY = Math.abs(event.touches[0].clientY - event.touches[event.touches.length - 1].clientY);
+    const touchMoveY = event.touches[0].clientY;
+    const deltaX = Math.abs(touchMoveX - startPos.x);
+    const deltaY = Math.abs(touchMoveY - startPos.y);
     const threshold = 5;
+    const newOffset = event.touches[0].clientX - startPos.x;
+    if (newOffset === offset) return;
 
-    if (dragging === 'horizontal' || (dragging !== 'vertical' && deltaX > deltaY + threshold)) {
-      const parentElement = document.getElementsByClassName('sendbird-conversation__messages-padding');
-      (parentElement[0] as HTMLElement).style.overflowY = 'hidden';
-      if (dragging !== 'horizontal') setDragging('horizontal');
-      const newOffset = event.touches[0].clientX - startX;
-      if (newOffset !== offset) setOffset(newOffset);
-    } else if (dragging !== 'vertical') setDragging('vertical');
+    if (!dragging) {
+      if (deltaX > deltaY) {
+        event.stopPropagation();
+        const parentElement = document.getElementsByClassName('sendbird-conversation__messages-padding');
+        (parentElement[0] as HTMLElement).style.overflowY = 'hidden';
+        setDragging('horizontal');
+        setOffset(newOffset);
+      } else {
+        setDragging('vertical');
+      }
+    } else if (dragging === 'horizontal') {
+      setOffset(newOffset);
+    }
   };
+
+  // const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+  //   if (!startX) return;
+  //   const touchMoveX = event.touches[0].clientX;
+  //   const deltaX = Math.abs(touchMoveX - startX);
+  //   const deltaY = Math.abs(event.touches[0].clientY - event.touches[event.touches.length - 1].clientY);
+  //   const threshold = 5;
+  //
+  //   if (dragging === 'horizontal' || (dragging !== 'vertical' && deltaX > deltaY + threshold)) {
+  //     const parentElement = document.getElementsByClassName('sendbird-conversation__messages-padding');
+  //     (parentElement[0] as HTMLElement).style.overflowY = 'hidden';
+  //     if (dragging !== 'horizontal') setDragging('horizontal');
+  //     const newOffset = event.touches[0].clientX - startX;
+  //     if (newOffset !== offset) setOffset(newOffset);
+  //   } else if (dragging !== 'vertical') setDragging('vertical');
+  // };
 
   const handleTouchEnd = () => {
     if (dragging !== null) {
@@ -220,7 +256,7 @@ export function Carousel({
       <div
         className='sendbird-carousel-items-wrapper'
         style={{
-          transition: dragging ? 'none' : 'transform 0.3s ease',
+          transition: dragging ? 'none' : 'transform 0.5s ease',
           transform: `translateX(${currentTranslateX}px)`,
           gap: gap,
         }}
