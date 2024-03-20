@@ -1,5 +1,5 @@
 import './index.scss';
-import React, { ReactElement, useRef, useState } from 'react';
+import React, {ReactElement, useRef, useState} from 'react';
 import { useMediaQueryContext } from '../../lib/MediaQueryContext';
 
 const PADDING_WIDTH = 24;
@@ -41,6 +41,7 @@ interface CarouselProps {
   id: string;
   items: ReactElement[];
   gap?: number;
+  classNameToHideOverflowY?: string;
 }
 
 interface StartPos {
@@ -48,10 +49,17 @@ interface StartPos {
   y: number;
 }
 
+interface DraggingInfo {
+  dragging: 'vertical' | 'horizontal' | null;
+  startPos: StartPos | null;
+  offset: number;
+}
+
 export function Carousel({
   id,
   items,
   gap = 8,
+  classNameToHideOverflowY = 'sendbird-conversation__messages-padding',
 }: CarouselProps): ReactElement {
   const { isMobile } = useMediaQueryContext();
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -69,88 +77,91 @@ export function Carousel({
   const isLastTwoItemsFitScreen = getIsLastTwoItemsFitScreen();
   const itemPositions: ItemPosition[] = getEachItemPositions();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [dragging, setDragging] = useState<'vertical' | 'horizontal' | null>(null);
-  const [startX, setStartX] = useState(0);
-  const [startPos, setStartPos] = useState<StartPos>();
-
-  const [offset, setOffset] = useState(0);
+  const [draggingInfo, setDraggingInfo] = useState<DraggingInfo | null>(null);
   const [translateX, setTranslateX] = useState(0);
+
   const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
-    setDragging('horizontal');
-    setStartX(event.clientX);
+    setDraggingInfo({
+      dragging: 'horizontal',
+      startPos: {
+        x: event.clientX,
+        y: event.clientY,
+      },
+      offset: 0,
+    });
   };
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!dragging) return;
+    if (!draggingInfo) return;
     const currentX = event.clientX;
-    const newOffset = currentX - startX;
-    setOffset(newOffset);
+    const newOffset = currentX - draggingInfo.startPos.x;
+    setDraggingInfo({
+      ...draggingInfo,
+      offset: newOffset,
+    });
   };
 
   const handleMouseUp = () => {
-    if (!dragging) return;
-    setDragging(null);
+    if (!draggingInfo) return;
     onDragEnd();
+    setDraggingInfo(null);
   };
 
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
-    // setStartX(event.touches[0].clientX);
-    setStartPos({
-      x: event.touches[0].clientX,
-      y: event.touches[0].clientY,
+    setDraggingInfo({
+      dragging: null,
+      startPos: {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+      },
+      offset: 0,
     });
   };
 
   const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-    if (!startPos) return;
+    if (!draggingInfo?.startPos) return;
+
+    const startPos = draggingInfo.startPos;
     const touchMoveX = event.touches[0].clientX;
     const touchMoveY = event.touches[0].clientY;
     const deltaX = Math.abs(touchMoveX - startPos.x);
     const deltaY = Math.abs(touchMoveY - startPos.y);
-    const threshold = 5;
     const newOffset = event.touches[0].clientX - startPos.x;
-    if (newOffset === offset) return;
+    if (newOffset === draggingInfo.offset) return;
 
-    if (!dragging) {
+    if (!draggingInfo.dragging) {
       if (deltaX > deltaY) {
-        event.stopPropagation();
-        const parentElement = document.getElementsByClassName('sendbird-conversation__messages-padding');
+        const parentElement = document.getElementsByClassName(classNameToHideOverflowY);
         (parentElement[0] as HTMLElement).style.overflowY = 'hidden';
-        setDragging('horizontal');
-        setOffset(newOffset);
+        setDraggingInfo({
+          ...draggingInfo,
+          dragging: 'horizontal',
+          offset: newOffset,
+        });
       } else {
-        setDragging('vertical');
+        setDraggingInfo({
+          ...draggingInfo,
+          dragging: 'vertical',
+        });
       }
-    } else if (dragging === 'horizontal') {
-      setOffset(newOffset);
+    } else if (draggingInfo.dragging === 'horizontal') {
+      setDraggingInfo({
+        ...draggingInfo,
+        offset: newOffset,
+      });
     }
   };
 
-  // const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-  //   if (!startX) return;
-  //   const touchMoveX = event.touches[0].clientX;
-  //   const deltaX = Math.abs(touchMoveX - startX);
-  //   const deltaY = Math.abs(event.touches[0].clientY - event.touches[event.touches.length - 1].clientY);
-  //   const threshold = 5;
-  //
-  //   if (dragging === 'horizontal' || (dragging !== 'vertical' && deltaX > deltaY + threshold)) {
-  //     const parentElement = document.getElementsByClassName('sendbird-conversation__messages-padding');
-  //     (parentElement[0] as HTMLElement).style.overflowY = 'hidden';
-  //     if (dragging !== 'horizontal') setDragging('horizontal');
-  //     const newOffset = event.touches[0].clientX - startX;
-  //     if (newOffset !== offset) setOffset(newOffset);
-  //   } else if (dragging !== 'vertical') setDragging('vertical');
-  // };
-
   const handleTouchEnd = () => {
-    if (dragging !== null) {
-      setDragging(null);
+    if (draggingInfo !== null) {
+      onDragEnd();
+      setDraggingInfo(null);
     }
-    onDragEnd();
   };
 
   const handleDragEnd = () => {
+    const offset = draggingInfo.offset;
     const absOffset = Math.abs(offset);
     if (absOffset >= SWIPE_THRESHOLD) {
       // If dragged to left, next index should be to the right
@@ -165,10 +176,10 @@ export function Carousel({
         setCurrentIndex(nextIndex);
       }
     }
-    setOffset(0);
   };
 
   const handleDragEndForMobile = () => {
+    const offset = draggingInfo.offset;
     const absOffset = Math.abs(offset);
     if (absOffset >= SWIPE_THRESHOLD) {
       // If dragged to left, next index should be to the right
@@ -205,13 +216,12 @@ export function Carousel({
         setCurrentIndex(nextIndex);
       }
     }
-    setOffset(0);
-    const parentElement = document.getElementsByClassName('sendbird-conversation__messages-padding');
+    const parentElement = document.getElementsByClassName(classNameToHideOverflowY);
     (parentElement[0] as HTMLElement).style.overflowY = 'scroll';
   };
 
   function getCurrentTranslateX() {
-    return translateX + offset;
+    return translateX + (draggingInfo?.offset ?? 0);
   }
 
   function getIsLastTwoItemsFitScreen() {
@@ -243,7 +253,7 @@ export function Carousel({
       id={id}
       ref={carouselRef}
       style={{
-        cursor: dragging ? 'grabbing' : 'grab',
+        cursor: draggingInfo?.dragging ? 'grabbing' : 'grab',
       }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -256,7 +266,7 @@ export function Carousel({
       <div
         className='sendbird-carousel-items-wrapper'
         style={{
-          transition: dragging ? 'none' : 'transform 0.5s ease',
+          transition: draggingInfo?.dragging ? 'none' : 'transform 0.5s ease',
           transform: `translateX(${currentTranslateX}px)`,
           gap: gap,
         }}
