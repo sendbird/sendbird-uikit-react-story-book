@@ -30,7 +30,7 @@ function CarouselItem({
   item,
   defaultWidth,
 }: CarouselItemProps): ReactElement {
-  return <div style={shouldRenderAsFixed(item) ? { width: 'fit-content' } : { minWidth: defaultWidth }}>
+  return <div style={shouldRenderAsFixed(item) ? { width: 'fit-content', backgroundColor: 'red', } : { minWidth: defaultWidth, backgroundColor: 'red', }}>
     {item}
   </div>;
 }
@@ -110,7 +110,7 @@ export const Carousel = React.memo(({
 
   const handleMouseUp = () => {
     if (!draggingInfo.dragging) return;
-    handleDragEnd();
+    handleTouchEnd();
   };
 
   const blockScroll = () => {
@@ -236,29 +236,11 @@ export const Carousel = React.memo(({
        * The button will have a small width (less than 50px).
        * We want to include this button in the view and snap to right padding wall IFF !isLastTwoItemsFitScreen.
        */
-      if (isLastItemNarrow) {
-        if (isLastTwoItemsFitScreen) {
-          if (nextIndex !== items.length - 1) {
-            setDraggingInfo(getNewDraggingInfo({
-              newTranslateX: itemPositions[nextIndex].start,
-              nextIndex,
-            }));
-          } else {
-            setDraggingInfo(getNewDraggingInfo());
-          }
-        } else if (nextIndex !== items.length - 1) {
-          setDraggingInfo(getNewDraggingInfo({
-            newTranslateX: itemPositions[nextIndex].start,
-            nextIndex,
-          }));
-        } else {
-          const translateWidth = itemPositions[nextIndex].start - lastItemWidth;
-          const rightEmptyWidth = screenWidth - (allItemsWidth + translateWidth + PADDING_WIDTH + CONTENT_LEFT_WIDTH);
-          setDraggingInfo(getNewDraggingInfo({
-            newTranslateX: translateWidth + rightEmptyWidth,
-            nextIndex,
-          }));
-        }
+      if (nextIndex === items.length - 1 || isLastItemFitsScreen(nextIndex)) {
+        setDraggingInfo(getNewDraggingInfo({
+          newTranslateX: itemPositions[items.length - 1].end - PADDING_WIDTH - CONTENT_LEFT_WIDTH + screenWidth,
+          nextIndex: items.length - 1,
+        }));
       } else {
         setDraggingInfo(getNewDraggingInfo({
           newTranslateX: itemPositions[nextIndex].start,
@@ -267,7 +249,10 @@ export const Carousel = React.memo(({
       }
       // If dragged to right, next index should be to the left
     } else if (offset > 0 && currentIndex > 0) {
-      const nextIndex = currentIndex - 1;
+      let nextIndex = currentIndex - 1;
+      while (draggingInfo.translateX >= itemPositions[nextIndex].start) {
+        nextIndex--;
+      }
       setDraggingInfo(getNewDraggingInfo({
         newTranslateX: itemPositions[nextIndex].start,
         nextIndex,
@@ -286,6 +271,12 @@ export const Carousel = React.memo(({
 
   function getIsLastTwoItemsFitScreen() {
     const restItemsWidth = itemWidths.slice(-2).reduce((prev, curr) => prev + gap + curr);
+    const restTotalWidth = PADDING_WIDTH + CONTENT_LEFT_WIDTH + restItemsWidth;
+    return restTotalWidth <= screenWidth;
+  }
+
+  function isLastItemFitsScreen(nextIndex: number) {
+    const restItemsWidth = itemWidths.slice(nextIndex).reduce((prev, curr) => prev + gap + curr);
     const restTotalWidth = PADDING_WIDTH + CONTENT_LEFT_WIDTH + restItemsWidth;
     return restTotalWidth <= screenWidth;
   }
