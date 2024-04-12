@@ -13,12 +13,13 @@ import { Nullable, SpaceFromTriggerType } from '../../types';
 
 import { getClassName, getEmojiListAll, getEmojiMapAll, SendableMessageType } from '../../utils';
 import { ReactedMembersBottomSheet } from '../MobileMenu/ReactedMembersBottomSheet';
-import ReactionItem from './ReactionItem';
 import { useMediaQueryContext } from '../../lib/MediaQueryContext';
 import { AddReactionBadgeItem } from './AddReactionBadgeItem';
 import { MobileEmojisBottomSheet } from '../MobileMenu/MobileEmojisBottomSheet';
 import useSendbirdStateContext from '../../hooks/useSendbirdStateContext';
 import { getIsReactionEnabled } from '../../utils/getIsReactionEnabled';
+
+import { ReactionItem, type ReactionItemProps } from './ReactionItem';
 
 export interface EmojiReactionsProps {
   className?: string | Array<string>;
@@ -31,6 +32,7 @@ export interface EmojiReactionsProps {
   isByMe?: boolean;
   toggleReaction?: (message: SendableMessageType, key: string, byMe: boolean) => void;
   onPressUserProfile?: (member: User) => void;
+  renderReactionItem?: (props: ReactionItemProps) => ReactElement;
 }
 
 const EmojiReactions = ({
@@ -44,6 +46,7 @@ const EmojiReactions = ({
   isByMe = false,
   toggleReaction,
   onPressUserProfile,
+  renderReactionItem = (props) => <ReactionItem {...props} />,
 }: EmojiReactionsProps): ReactElement => {
   let showTheReactedMembers = false;
   try {
@@ -71,18 +74,16 @@ const EmojiReactions = ({
     ])}>
       {((message.reactions?.length ?? 0) > 0) && (
         message.reactions?.map((reaction: Reaction): ReactElement => {
-          return (
-            <ReactionItem
-              key={reaction?.key}
-              reaction={reaction}
-              memberNicknamesMap={memberNicknamesMap}
-              setEmojiKey={setSelectedEmojiKey}
-              toggleReaction={toggleReaction}
-              emojisMap={emojisMap}
-              channel={channel}
-              message={message}
-            />
-          );
+          return renderReactionItem({
+            key: reaction?.key,
+            reaction: reaction,
+            memberNicknamesMap: memberNicknamesMap,
+            setEmojiKey: setSelectedEmojiKey,
+            toggleReaction: toggleReaction,
+            emojisMap: emojisMap,
+            channel: channel,
+            message: message,
+          });
         })
       )}
       {(!isMobile && showAddReactionBadge) && (
@@ -187,4 +188,5 @@ const EmojiReactions = ({
   );
 };
 
+export * from './ReactionItem';
 export default EmojiReactions;

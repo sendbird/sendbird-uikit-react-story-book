@@ -19,7 +19,7 @@ import { LocalizationContext } from '../../lib/LocalizationContext';
 import useSendbirdStateContext from '../../hooks/useSendbirdStateContext';
 import { useMessageContext } from '../../modules/Message/context/MessageProvider';
 
-type Props = {
+export interface ReactionItemProps {
   reaction: Reaction;
   memberNicknamesMap: Map<string, string>;
   setEmojiKey: React.Dispatch<React.SetStateAction<string>>;
@@ -27,9 +27,10 @@ type Props = {
   emojisMap: Map<string, Emoji>;
   channel: Nullable<GroupChannel | OpenChannel>;
   message?: SendableMessageType;
+  key?: string | number;
 };
 
-export default function ReactionItem({
+export function ReactionItem({
   reaction,
   memberNicknamesMap,
   setEmojiKey,
@@ -37,7 +38,8 @@ export default function ReactionItem({
   emojisMap,
   channel,
   message,
-}: Props) {
+  key,
+}: ReactionItemProps) {
   const store = useSendbirdStateContext();
   const { isMobile } = useMediaQueryContext();
   const messageStore = useMessageContext();
@@ -45,8 +47,7 @@ export default function ReactionItem({
 
   const userId = store.config.userId;
   const reactedByMe = isReactedBy(userId, reaction);
-  const showHoverTooltip = (reaction.userIds.length > 0)
-    && (channel?.isGroupChannel() && !channel.isSuper);
+  const showHoverTooltip = (reaction.userIds.length > 0) && (channel?.isGroupChannel() && !channel.isSuper);
 
   const handleOnClick = () => {
     setEmojiKey('');
@@ -64,6 +65,7 @@ export default function ReactionItem({
 
   return (
     <TooltipWrapper
+      key={key}
       className="sendbird-emoji-reactions__reaction-badge"
       hoverTooltip={showHoverTooltip ? (
         <Tooltip>
@@ -96,3 +98,5 @@ export default function ReactionItem({
     </TooltipWrapper>
   );
 }
+
+export default ReactionItem;
