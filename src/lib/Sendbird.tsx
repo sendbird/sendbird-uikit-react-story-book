@@ -417,11 +417,9 @@ const SendbirdSDK = ({
     >
       <MediaQueryProvider logger={logger} breakpoint={breakpoint}>
         <LocalizationProvider stringSet={localeStringSet} dateLocale={dateLocale}>
-          <VoiceMessageProvider>
-            <GlobalModalProvider>
-              {children}
-            </GlobalModalProvider>
-          </VoiceMessageProvider>
+          <GlobalModalProvider>
+            {children}
+          </GlobalModalProvider>
         </LocalizationProvider>
       </MediaQueryProvider>
       {/* Roots */}
