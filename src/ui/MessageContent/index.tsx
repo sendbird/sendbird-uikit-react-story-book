@@ -9,20 +9,18 @@ import Label, { LabelColors, LabelTypography } from '../Label';
 import EmojiReactions, { EmojiReactionsProps } from '../EmojiReactions';
 
 import AdminMessage from '../AdminMessage';
-import QuoteMessage from '../QuoteMessage';
 
 import type { OnBeforeDownloadFileMessageType } from '../../modules/GroupChannel/context/GroupChannelProvider';
 import {
   CoreMessageType,
   getClassName,
-  getMessageContentMiddleClassNameByContainerType,
   isAdminMessage,
   isMultipleFilesMessage,
-  isOGMessage, isSendableMessage,
+  isOGMessage,
+  isSendableMessage,
   isTemplateMessage,
   isThumbnailMessage,
   SendableMessageType,
-  UI_CONTAINER_TYPES,
 } from '../../utils';
 import { LocalizationContext, useLocalization } from '../../lib/LocalizationContext';
 import useSendbirdStateContext from '../../hooks/useSendbirdStateContext';
@@ -144,21 +142,21 @@ export default function MessageContent(props: MessageContentProps): ReactElement
   const [showFeedbackOptionsMenu, setShowFeedbackOptionsMenu] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedbackFailedText, setFeedbackFailedText] = useState('');
-  const [uiContainerType, setUiContainerType] = useState<UI_CONTAINER_TYPES>(getMessageContentMiddleClassNameByContainerType({
-    message,
-    isMobile,
-  }));
+  // const [uiContainerType, setUiContainerType] = useState<UI_CONTAINER_TYPES>(getMessageContentMiddleClassNameByContainerType({
+  //   message,
+  //   isMobile,
+  // }));
 
-  const onTemplateMessageRenderedCallback = (renderedTemplateType: 'failed' | 'composite' | 'simple') => {
-    if (renderedTemplateType === 'failed') {
-      setUiContainerType(UI_CONTAINER_TYPES.DEFAULT);
-    } else if (renderedTemplateType === 'composite') {
-      /**
-       * Composite templates must have default carousel view irregardless of given containerType.
-       */
-      setUiContainerType(UI_CONTAINER_TYPES.DEFAULT_CAROUSEL);
-    }
-  };
+  // const onTemplateMessageRenderedCallback = (renderedTemplateType: 'failed' | 'composite' | 'simple') => {
+  //   if (renderedTemplateType === 'failed') {
+  //     setUiContainerType(UI_CONTAINER_TYPES.DEFAULT);
+  //   } else if (renderedTemplateType === 'composite') {
+  //     /**
+  //      * Composite templates must have default carousel view irregardless of given containerType.
+  //      */
+  //     setUiContainerType(UI_CONTAINER_TYPES.DEFAULT_CAROUSEL);
+  //   }
+  // };
 
   const { stringSet } = useContext(LocalizationContext);
 
@@ -200,7 +198,7 @@ export default function MessageContent(props: MessageContentProps): ReactElement
   const showThreadReplies = isNotTemplateMessage && displayThreadReplies;
   const showRightContent = isNotTemplateMessage && !isByMe && !isMobile;
 
-  const isTimestampBottom = !!uiContainerType;
+  const isTimestampBottom = false; // !!uiContainerType;
 
   const getTotalBottom = (): number => {
     let sum = 2;
@@ -313,7 +311,7 @@ export default function MessageContent(props: MessageContentProps): ReactElement
         className={getClassName([
           'sendbird-message-content__middle',
           isTemplateMessage(message) ? 'sendbird-message-content__middle__for_template_message' : '',
-          uiContainerType,
+          // uiContainerType,
         ])}
         {...(isMobile ? { ...longPress } : {})}
         ref={contentRef}
@@ -322,29 +320,6 @@ export default function MessageContent(props: MessageContentProps): ReactElement
           !isByMe && !chainTop && !useReplying && renderMessageHeader(props)
         }
         {/* quote message */}
-        {(useReplying) ? (
-          <div
-            className={getClassName(['sendbird-message-content__middle__quote-message', isByMe ? 'outgoing' : 'incoming', useReplyingClassName])}>
-            <QuoteMessage
-              className="sendbird-message-content__middle__quote-message__quote"
-              message={message}
-              userId={userId}
-              isByMe={isByMe}
-              isUnavailable={(channel?.messageOffsetTimestamp ?? 0) > (message.parentMessage?.createdAt ?? 0)}
-              onClick={() => {
-                if (replyType === 'THREAD' && threadReplySelectType === ThreadReplySelectType.THREAD) {
-                  onQuoteMessageClick?.({ message });
-                }
-                if (
-                  (replyType === 'QUOTE_REPLY' || (replyType === 'THREAD' && threadReplySelectType === ThreadReplySelectType.PARENT))
-                  && message?.parentMessage?.createdAt && message?.parentMessageId
-                ) {
-                  scrollToMessage(message.parentMessage.createdAt, message.parentMessageId);
-                }
-              }}
-            />
-          </div>
-        ) : null}
         {/* container: message item body + emoji reactions */}
 
         <div
@@ -360,7 +335,7 @@ export default function MessageContent(props: MessageContentProps): ReactElement
                 'sendbird-message-content__middle__body-container__created-at',
                 'left',
                 supposedHoverClassName,
-                uiContainerType,
+                // uiContainerType,
               ])}
               ref={timestampRef}
             >
@@ -383,7 +358,7 @@ export default function MessageContent(props: MessageContentProps): ReactElement
               config,
               isReactionEnabledInChannel,
               isByMe,
-              onTemplateMessageRenderedCallback,
+              // onTemplateMessageRenderedCallback,
               onBeforeDownloadFileMessage,
             })
           }

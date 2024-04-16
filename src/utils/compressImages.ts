@@ -77,49 +77,54 @@ export const compressImages = async ({
   logger,
   imageCompression,
 }: CompressImagesParams) => {
-  const { compressionRate } = imageCompression;
-  const resizingWidth = pxToNumber(imageCompression.resizingWidth);
-  const resizingHeight = pxToNumber(imageCompression.resizingHeight);
-
-  const result = {
+  return {
     failedIndexes: [] as number[],
-    compressedFiles: [] as File[],
-  };
-
-  if (!(Array.isArray(files) && files.length > 0)) {
-    logger?.warning('utils - compressImages: There are no files.', files);
-    return result;
-  }
-  if (compressionRate < 0 || 1 < compressionRate) {
-    logger?.warning('utils - compressImages: The compressionRate is not acceptable.', compressionRate);
-    return result;
+    compressedFiles: files,
   }
 
-  await Promise.all(
-    files
-      .map(async (file, index) => {
-        if (!(file.type === 'image/jpg' || file.type === 'image/png' || file.type === 'image/jpeg')) {
-          logger?.warning('utils - compressImages: The fileType is not compressible.', { file, index });
-          result.failedIndexes.push(index);
-          result.compressedFiles.push(file);
-          return;
-        }
-
-        try {
-          const compressedImage = await compressImage({
-            imageFile: file,
-            compressionRate,
-            resizingWidth,
-            resizingHeight,
-          });
-          result.compressedFiles.push(compressedImage);
-        } catch (err) {
-          result.failedIndexes.push(index);
-          logger?.warning('utils - compressImages: Failed to compress image file', { file, err });
-        }
-      }),
-  );
-
-  logger?.info('utils - compressImages: Finished compressing images', result);
-  return result;
+  // const { compressionRate } = imageCompression;
+  // const resizingWidth = pxToNumber(imageCompression.resizingWidth);
+  // const resizingHeight = pxToNumber(imageCompression.resizingHeight);
+  //
+  // const result = {
+  //   failedIndexes: [] as number[],
+  //   compressedFiles: [] as File[],
+  // };
+  //
+  // if (!(Array.isArray(files) && files.length > 0)) {
+  //   logger?.warning('utils - compressImages: There are no files.', files);
+  //   return result;
+  // }
+  // if (compressionRate < 0 || 1 < compressionRate) {
+  //   logger?.warning('utils - compressImages: The compressionRate is not acceptable.', compressionRate);
+  //   return result;
+  // }
+  //
+  // await Promise.all(
+  //   files
+  //     .map(async (file, index) => {
+  //       if (!(file.type === 'image/jpg' || file.type === 'image/png' || file.type === 'image/jpeg')) {
+  //         logger?.warning('utils - compressImages: The fileType is not compressible.', { file, index });
+  //         result.failedIndexes.push(index);
+  //         result.compressedFiles.push(file);
+  //         return;
+  //       }
+  //
+  //       try {
+  //         const compressedImage = await compressImage({
+  //           imageFile: file,
+  //           compressionRate,
+  //           resizingWidth,
+  //           resizingHeight,
+  //         });
+  //         result.compressedFiles.push(compressedImage);
+  //       } catch (err) {
+  //         result.failedIndexes.push(index);
+  //         logger?.warning('utils - compressImages: Failed to compress image file', { file, err });
+  //       }
+  //     }),
+  // );
+  //
+  // logger?.info('utils - compressImages: Finished compressing images', result);
+  // return result;
 };

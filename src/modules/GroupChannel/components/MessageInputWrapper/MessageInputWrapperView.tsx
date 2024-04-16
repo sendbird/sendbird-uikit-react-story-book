@@ -20,8 +20,6 @@ import { useLocalization } from '../../../../lib/LocalizationContext';
 import SuggestedMentionList from '../SuggestedMentionList';
 import { useDirtyGetMentions } from '../../../Message/hooks/useDirtyGetMentions';
 import { SendableMessageType } from '../../../../utils';
-import QuoteMessageInput from '../../../../ui/QuoteMessageInput';
-import VoiceMessageInputWrapper from './VoiceMessageInputWrapper';
 import MessageInput from '../../../../ui/MessageInput';
 import { useMediaQueryContext } from '../../../../lib/MediaQueryContext';
 import { MessageInputKeys } from '../../../../ui/MessageInput/const';
@@ -178,99 +176,79 @@ export const MessageInputWrapperView = React.forwardRef((
           maxSuggestionCount={maxSuggestionCount}
         />
       )}
-      {quoteMessage && (
-        <div className="sendbird-message-input-wrapper__quote-message-input">
-          <QuoteMessageInput replyingMessage={quoteMessage} onClose={() => setQuoteMessage(null)} />
-        </div>
-      )}
-      {showVoiceMessageInput ? (
-        <VoiceMessageInputWrapper
-          channel={currentChannel}
-          onSubmitClick={(recordedFile, duration) => {
-            sendVoiceMessage({ file: recordedFile, parentMessageId: quoteMessage?.messageId }, duration);
-            setQuoteMessage(null);
-            setShowVoiceMessageInput(false);
-          }}
-          onCancelClick={() => {
-            setShowVoiceMessageInput(false);
-          }}
-        />
-      ) : (
-        <MessageInput
-          className="sendbird-message-input-wrapper__message-input"
-          channel={currentChannel}
-          channelUrl={currentChannel?.url}
-          isMobile={isMobile}
-          acceptableMimeTypes={acceptableMimeTypes}
-          mentionSelectedUser={selectedUser}
-          isMentionEnabled={isMentionEnabled}
-          isVoiceMessageEnabled={isVoiceMessageEnabled}
-          isSelectingMultipleFilesEnabled={isMultipleFilesMessageEnabled}
-          onVoiceMessageIconClick={() => {
-            setShowVoiceMessageInput(true);
-          }}
-          setMentionedUsers={setMentionedUsers}
-          placeholder={
-            (quoteMessage && stringSet.MESSAGE_INPUT__QUOTE_REPLY__PLACE_HOLDER)
-            || ((disabled || isDisabledBecauseFrozen(currentChannel)) && stringSet.MESSAGE_INPUT__PLACE_HOLDER__DISABLED)
-            || (isDisabledBecauseMuted(currentChannel)
-              && (isMobile ? stringSet.MESSAGE_INPUT__PLACE_HOLDER__MUTED_SHORT : stringSet.MESSAGE_INPUT__PLACE_HOLDER__MUTED))
-          }
-          ref={ref || messageInputRef}
-          disabled={isMessageInputDisabled}
-          renderFileUploadIcon={renderFileUploadIcon}
-          renderSendMessageIcon={renderSendMessageIcon}
-          renderVoiceMessageIcon={renderVoiceMessageIcon}
-          onStartTyping={() => {
-            currentChannel?.startTyping();
-          }}
-          onSendMessage={({ message, mentionTemplate }) => {
-            sendUserMessage({
-              message,
-              mentionedUsers,
-              mentionedMessageTemplate: mentionTemplate,
-              parentMessageId: quoteMessage?.messageId,
-            });
+      <MessageInput
+        className="sendbird-message-input-wrapper__message-input"
+        channel={currentChannel}
+        channelUrl={currentChannel?.url}
+        isMobile={isMobile}
+        acceptableMimeTypes={acceptableMimeTypes}
+        mentionSelectedUser={selectedUser}
+        isMentionEnabled={isMentionEnabled}
+        isVoiceMessageEnabled={isVoiceMessageEnabled}
+        isSelectingMultipleFilesEnabled={isMultipleFilesMessageEnabled}
+        onVoiceMessageIconClick={() => {
+          setShowVoiceMessageInput(true);
+        }}
+        setMentionedUsers={setMentionedUsers}
+        placeholder={
+          (quoteMessage && stringSet.MESSAGE_INPUT__QUOTE_REPLY__PLACE_HOLDER)
+          || ((disabled || isDisabledBecauseFrozen(currentChannel)) && stringSet.MESSAGE_INPUT__PLACE_HOLDER__DISABLED)
+          || (isDisabledBecauseMuted(currentChannel)
+            && (isMobile ? stringSet.MESSAGE_INPUT__PLACE_HOLDER__MUTED_SHORT : stringSet.MESSAGE_INPUT__PLACE_HOLDER__MUTED))
+        }
+        ref={ref || messageInputRef}
+        disabled={isMessageInputDisabled}
+        renderFileUploadIcon={renderFileUploadIcon}
+        renderSendMessageIcon={renderSendMessageIcon}
+        renderVoiceMessageIcon={renderVoiceMessageIcon}
+        onStartTyping={() => {
+          currentChannel?.startTyping();
+        }}
+        onSendMessage={({ message, mentionTemplate }) => {
+          sendUserMessage({
+            message,
+            mentionedUsers,
+            mentionedMessageTemplate: mentionTemplate,
+            parentMessageId: quoteMessage?.messageId,
+          });
+          setMentionNickname('');
+          setMentionedUsers([]);
+          setQuoteMessage(null);
+          currentChannel?.endTyping?.();
+        }}
+        onFileUpload={(fileList) => {
+          handleUploadFiles(fileList);
+          setQuoteMessage(null);
+        }}
+        onUserMentioned={(user) => {
+          if (selectedUser?.userId === user?.userId) {
+            setSelectedUser(null);
             setMentionNickname('');
-            setMentionedUsers([]);
-            setQuoteMessage(null);
-            currentChannel?.endTyping?.();
-          }}
-          onFileUpload={(fileList) => {
-            handleUploadFiles(fileList);
-            setQuoteMessage(null);
-          }}
-          onUserMentioned={(user) => {
-            if (selectedUser?.userId === user?.userId) {
-              setSelectedUser(null);
-              setMentionNickname('');
-            }
-          }}
-          onMentionStringChange={(mentionText) => {
-            setMentionNickname(mentionText);
-          }}
-          onMentionedUserIdsUpdated={(userIds) => {
-            setMentionedUserIds(userIds);
-          }}
-          onKeyDown={(e) => {
-            if (
-              showSuggestedMentionList
-              && mentionSuggestedUsers?.length > 0
-              && ((e.key === MessageInputKeys.Enter && ableMention)
-                || e.key === MessageInputKeys.ArrowUp
-                || e.key === MessageInputKeys.ArrowDown)
-            ) {
-              setMessageInputEvent(e);
-              return true;
-            }
-            return false;
-          }}
-        />
-      )}
+          }
+        }}
+        onMentionStringChange={(mentionText) => {
+          setMentionNickname(mentionText);
+        }}
+        onMentionedUserIdsUpdated={(userIds) => {
+          setMentionedUserIds(userIds);
+        }}
+        onKeyDown={(e) => {
+          if (
+            showSuggestedMentionList
+            && mentionSuggestedUsers?.length > 0
+            && ((e.key === MessageInputKeys.Enter && ableMention)
+              || e.key === MessageInputKeys.ArrowUp
+              || e.key === MessageInputKeys.ArrowDown)
+          ) {
+            setMessageInputEvent(e);
+            return true;
+          }
+          return false;
+        }}
+      />
     </div>
   );
 });
 
-export { VoiceMessageInputWrapper, VoiceMessageInputWrapperProps } from './VoiceMessageInputWrapper';
 
 export default MessageInputWrapperView;
